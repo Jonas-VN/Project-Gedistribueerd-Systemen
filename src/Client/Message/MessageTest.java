@@ -12,16 +12,10 @@ import static org.junit.Assert.assertEquals;
 
 public class MessageTest {
     @Test
-    public void testSerialization() throws NoSuchAlgorithmException {
-        KeyPairGenerator keyGen2 = KeyPairGenerator.getInstance("RSA");
-        keyGen2.initialize(2048);
-        KeyPair keyPair = keyGen2.generateKeyPair();
-        PublicKey publicKey = keyPair.getPublic();
-
+    public void testSerialization() {
         Message message = new Message("Hello");
         message.setIndex(0);
         message.setTag(0);
-        message.setSeen(false);
         byte[] serializedMessage = message.serialize();
         Message deserializedMessage = Message.deserialize(serializedMessage);
 
@@ -40,7 +34,6 @@ public class MessageTest {
         Message message = new Message("Hello");
         message.setIndex(0);
         message.setTag(0);
-        message.setSeen(false);
         byte[] encryptedMessage = MessageEncryptor.encrypt(message, publicKey);
         Message decryptedMessage = MessageEncryptor.decrypt(encryptedMessage, privateKey);
 

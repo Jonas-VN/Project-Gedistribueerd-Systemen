@@ -1,7 +1,6 @@
 package Client.Message;
 
 import java.io.*;
-import java.security.PublicKey;
 import java.util.Objects;
 
 public class Message implements Serializable {
@@ -11,7 +10,6 @@ public class Message implements Serializable {
     private final String message;
     private int index;
     private int tag;
-    private boolean seen;
 
 
     public Message(String message) {
@@ -30,10 +28,6 @@ public class Message implements Serializable {
         return tag;
     }
 
-    public boolean getSeen() {
-        return seen;
-    }
-
     public void setIndex(int index) {
         this.index = index;
     }
@@ -41,12 +35,6 @@ public class Message implements Serializable {
     public void setTag(int tag) {
         this.tag = tag;
     }
-
-    public void setSeen(boolean seen) {
-        this.seen = seen;
-    }
-
-
 
     public byte[] serialize() {
         try (ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
@@ -77,7 +65,6 @@ public class Message implements Serializable {
                 "message='" + message + '\'' +
                 ", index=" + index +
                 ", tag=" + tag +
-                ", seen=" + seen +
                 '}';
     }
 
@@ -86,11 +73,11 @@ public class Message implements Serializable {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         Message message1 = (Message) o;
-        return index == message1.index && tag == message1.tag && seen == message1.seen && Objects.equals(message, message1.message);
+        return index == message1.index && tag == message1.tag && Objects.equals(message, message1.message);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(message, index, tag, seen);
+        return Objects.hash(message, index, tag);
     }
 }
