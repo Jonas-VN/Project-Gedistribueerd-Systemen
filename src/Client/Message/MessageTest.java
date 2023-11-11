@@ -18,7 +18,10 @@ public class MessageTest {
         KeyPair keyPair = keyGen2.generateKeyPair();
         PublicKey publicKey = keyPair.getPublic();
 
-        Message message = new Message("Hello", publicKey, 0, 0, false);
+        Message message = new Message("Hello");
+        message.setIndex(0);
+        message.setTag(0);
+        message.setSeen(false);
         byte[] serializedMessage = message.serialize();
         Message deserializedMessage = Message.deserialize(serializedMessage);
 
@@ -34,7 +37,10 @@ public class MessageTest {
         PublicKey publicKey = keyPair.getPublic();
         PrivateKey privateKey = keyPair.getPrivate();
 
-        Message message = new Message("Hello", publicKey, 0, 0, false);
+        Message message = new Message("Hello");
+        message.setIndex(0);
+        message.setTag(0);
+        message.setSeen(false);
         byte[] encryptedMessage = MessageEncryptor.encrypt(message, publicKey);
         Message decryptedMessage = MessageEncryptor.decrypt(encryptedMessage, privateKey);
 

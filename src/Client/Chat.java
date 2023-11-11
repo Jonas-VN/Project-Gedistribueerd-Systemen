@@ -35,7 +35,7 @@ public class Chat {
     }
 
     public void bump(PublicKey otherPublicKey, int index, int tag)  {
-        this.messages.add(new Message("Welcome to this new chatroom", otherPublicKey, index, tag, true));
+        this.messages.add(new Message("Welcome to this new chatroom"));
     }
 
     // Encrypt a message

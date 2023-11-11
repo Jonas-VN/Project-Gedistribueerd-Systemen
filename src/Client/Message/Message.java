@@ -9,25 +9,44 @@ public class Message implements Serializable {
     private static final long serialVersionUID = 1L;
 
     private final String message;
-    private final MessageMetaData metaData;
+    private int index;
+    private int tag;
+    private boolean seen;
 
-    public Message(String message, MessageMetaData metaData) {
-        this.message = message;
-        this.metaData = metaData;
-    }
 
-    public Message(String message, PublicKey publicKey, int index, int tag, boolean seen) {
+    public Message(String message) {
         this.message = message;
-        this.metaData = new MessageMetaData(publicKey, index, tag, seen);
     }
 
     public String getMessage() {
         return message;
     }
 
-    public MessageMetaData getMetaData() {
-        return metaData;
+    public int getIndex() {
+        return index;
     }
+
+    public int getTag() {
+        return tag;
+    }
+
+    public boolean getSeen() {
+        return seen;
+    }
+
+    public void setIndex(int index) {
+        this.index = index;
+    }
+
+    public void setTag(int tag) {
+        this.tag = tag;
+    }
+
+    public void setSeen(boolean seen) {
+        this.seen = seen;
+    }
+
+
 
     public byte[] serialize() {
         try (ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
@@ -56,7 +75,9 @@ public class Message implements Serializable {
     public String toString() {
         return "Message{" +
                 "message='" + message + '\'' +
-                ", metaData=" + metaData +
+                ", index=" + index +
+                ", tag=" + tag +
+                ", seen=" + seen +
                 '}';
     }
 
@@ -65,11 +86,11 @@ public class Message implements Serializable {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         Message message1 = (Message) o;
-        return Objects.equals(message, message1.message) && Objects.equals(metaData, message1.metaData);
+        return index == message1.index && tag == message1.tag && seen == message1.seen && Objects.equals(message, message1.message);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(message, metaData);
+        return Objects.hash(message, index, tag, seen);
     }
 }

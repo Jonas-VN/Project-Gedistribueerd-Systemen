@@ -1,11 +1,6 @@
 package Client.Message;
 
-import Client.Message.Message;
-
-import javax.crypto.BadPaddingException;
-import javax.crypto.Cipher;
-import javax.crypto.IllegalBlockSizeException;
-import javax.crypto.NoSuchPaddingException;
+import javax.crypto.*;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
@@ -15,6 +10,7 @@ public class MessageEncryptor {
     public static byte[] encrypt(Message message, PublicKey publicKey) throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException {
         Cipher cipher = Cipher.getInstance("RSA");
         cipher.init(Cipher.ENCRYPT_MODE, publicKey);
+        System.out.println(message.serialize().length);
         return cipher.doFinal(message.serialize());
     }
 
