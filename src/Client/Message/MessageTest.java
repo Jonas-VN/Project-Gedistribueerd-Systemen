@@ -1,15 +1,18 @@
 package Client.Message;
 
 
+import org.junit.Test;
+
+import javax.crypto.BadPaddingException;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.NoSuchPaddingException;
 import java.security.*;
-import java.util.Base64;
+
+import static org.junit.Assert.assertEquals;
 
 public class MessageTest {
-    public static void main(String[] args) throws NoSuchAlgorithmException {
-        testSerialization();
-    }
-
-    public static void testSerialization() throws NoSuchAlgorithmException {
+    @Test
+    public void testSerialization() throws NoSuchAlgorithmException {
         KeyPairGenerator keyGen2 = KeyPairGenerator.getInstance("RSA");
         keyGen2.initialize(2048);
         KeyPair keyPair = keyGen2.generateKeyPair();
@@ -17,9 +20,25 @@ public class MessageTest {
 
         Message message = new Message("Hello", publicKey, 0, 0, false);
         byte[] serializedMessage = message.serialize();
-        System.out.println("Serialized bytes: \n" + Base64.getEncoder().encodeToString(serializedMessage));
         Message deserializedMessage = Message.deserialize(serializedMessage);
+
         assert deserializedMessage != null;
-        System.out.println("Deserialized: " + deserializedMessage);
+        assertEquals(message, deserializedMessage);
+        assertEquals(message.getMessage(), deserializedMessage.getMessage());
+    }
+    @Test
+    public void testEncryption() throws NoSuchAlgorithmException, InvalidKeyException, NoSuchPaddingException, IllegalBlockSizeException, BadPaddingException {
+        KeyPairGenerator keyGen2 = KeyPairGenerator.getInstance("RSA");
+        keyGen2.initialize(2048);
+        KeyPair keyPair = keyGen2.generateKeyPair();
+        PublicKey publicKey = keyPair.getPublic();
+        PrivateKey privateKey = keyPair.getPrivate();
+
+        Message message = new Message("Hello", publicKey, 0, 0, false);
+        byte[] encryptedMessage = MessageEncryptor.encrypt(message, publicKey);
+        Message decryptedMessage = MessageEncryptor.decrypt(encryptedMessage, privateKey);
+
+        assertEquals(message, decryptedMessage);
+        assertEquals(message.getMessage(), decryptedMessage.getMessage());
     }
 }

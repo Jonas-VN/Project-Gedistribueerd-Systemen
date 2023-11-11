@@ -2,6 +2,7 @@ package Client.Message;
 
 import java.io.*;
 import java.security.PublicKey;
+import java.util.Objects;
 
 public class Message implements Serializable {
     @Serial
@@ -57,5 +58,18 @@ public class Message implements Serializable {
                 "message='" + message + '\'' +
                 ", metaData=" + metaData +
                 '}';
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Message message1 = (Message) o;
+        return Objects.equals(message, message1.message) && Objects.equals(metaData, message1.metaData);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(message, metaData);
     }
 }

@@ -2,6 +2,7 @@ package Client.Message;
 
 import java.io.*;
 import java.security.PublicKey;
+import java.util.Objects;
 
 public class MessageMetaData implements Serializable {
     @Serial
@@ -68,5 +69,18 @@ public class MessageMetaData implements Serializable {
                 ", tag=" + tag +
                 ", seen=" + seen +
                 '}';
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        MessageMetaData that = (MessageMetaData) o;
+        return index == that.index && tag == that.tag && seen == that.seen && Objects.equals(publicKey, that.publicKey);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(publicKey, index, tag, seen);
     }
 }
