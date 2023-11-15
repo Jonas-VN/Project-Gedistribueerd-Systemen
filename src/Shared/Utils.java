@@ -11,6 +11,10 @@ public class Utils {
 
     public static SecretKey base64ToKey(String key) {
         byte[] keyBytes = base64ToBytes(key);
+        return bytesToKey(keyBytes);
+    }
+
+    public static SecretKey bytesToKey(byte[] keyBytes) {
         return new SecretKeySpec(keyBytes, 0, keyBytes.length, "AES");
     }
 

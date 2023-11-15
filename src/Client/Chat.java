@@ -9,6 +9,7 @@ import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.security.*;
+import java.security.spec.InvalidKeySpecException;
 import java.util.ArrayList;
 import java.util.Scanner;
 
@@ -44,7 +45,7 @@ public class Chat {
         return this.messages;
     }
 
-    public void sendMessage(String message) throws RemoteException, NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException {
+    public void sendMessage(String message) throws RemoteException, NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException, InvalidKeySpecException {
         Message messageObject = new Message(message);
         int nextIndex = UserInfo.generateIndex(chatServer.getSize());
         messageObject.setIndex(nextIndex);
@@ -56,17 +57,17 @@ public class Chat {
         this.chatServer.add(encryptedMessage, this.AB.getIndex(), this.AB.getTag());
         this.messages.add(messageObject);
 
-        this.AB.deriveNewKey();
+        this.AB.deriveNewKey(this.AB.getTag());
         this.AB.setIndex(nextIndex);
         this.AB.setTag(nextTag);
     }
 
-    public void receiveMessage() throws RemoteException, NoSuchPaddingException, NoSuchAlgorithmException, InvalidKeyException, BadPaddingException, IllegalBlockSizeException {
+    public void receiveMessage() throws RemoteException, NoSuchPaddingException, NoSuchAlgorithmException, InvalidKeyException, BadPaddingException, IllegalBlockSizeException, InvalidKeySpecException {
         byte[] encryptedMessage = this.chatServer.get(this.BA.getIndex(), this.BA.getTag());
         Message message = Message.decrypt(encryptedMessage, this.BA.getSecretKey());
         this.messages.add(message);
 
-        this.BA.deriveNewKey();
+        this.BA.deriveNewKey(this.BA.getTag());
         this.BA.setIndex(message.getIndex());
         this.BA.setTag(message.getTag());
     }

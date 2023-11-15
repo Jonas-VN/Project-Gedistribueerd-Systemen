@@ -1,11 +1,17 @@
 package Client;
 
 import Shared.Utils;
+import jdk.jshell.execution.Util;
 
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
+import javax.crypto.SecretKeyFactory;
+import javax.crypto.spec.PBEKeySpec;
+import javax.crypto.spec.SecretKeySpec;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
+import java.security.spec.InvalidKeySpecException;
+import java.security.spec.KeySpec;
 
 public class UserInfo {
     private SecretKey secretKey;
@@ -35,9 +41,12 @@ public class UserInfo {
     public void setTag(byte[] tag) {
         this.tag = tag;
     }
-    public void deriveNewKey() {
-        // TODO: hebben salt nodig? dus password?
-        return;
+    public void deriveNewKey(byte[] salt) throws InvalidKeySpecException, NoSuchAlgorithmException {
+        int iterations = 1000;
+        KeySpec keySpec = new PBEKeySpec(Utils.keyToBase64(this.secretKey).toCharArray(), salt, iterations, 256);
+        SecretKeyFactory keyFactory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256");
+        byte[] derivedKeyBytes = keyFactory.generateSecret(keySpec).getEncoded();
+        this.secretKey = Utils.bytesToKey(derivedKeyBytes);
     }
 
     @Override
