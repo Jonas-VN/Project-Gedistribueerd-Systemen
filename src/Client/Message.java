@@ -10,10 +10,10 @@ import java.util.Objects;
 
 public class Message {
     private static final String SEPARATOR = "§";
-
     private final String message;
     private int index;
     private byte[] tag;
+    private boolean sentByMe = true;
 
 
     public Message(String message) {
@@ -32,12 +32,20 @@ public class Message {
         return tag;
     }
 
+    public boolean isSentByMe() {
+        return sentByMe;
+    }
+
     public void setIndex(int index) {
         this.index = index;
     }
 
     public void setTag(byte[] tag) {
         this.tag = tag;
+    }
+
+    public void setSentByMe(boolean sentByMe) {
+        this.sentByMe = sentByMe;
     }
 
     public String getString() {

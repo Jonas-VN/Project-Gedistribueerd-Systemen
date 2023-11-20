@@ -71,4 +71,17 @@ public class UserInfo {
     public static int generateIndex(int size) {
         return new SecureRandom().nextInt(size);
     }
+
+    public String toCSV() {
+        return Utils.keyToBase64(this.secretKey) + "," + this.index + "," + Utils.tagToBase64(this.tag);
+    }
+
+    public static UserInfo fromCSV(String csv) {
+        String[] parts = csv.split(",");
+        UserInfo userInfo = new UserInfo();
+        userInfo.setSecretKey(Utils.base64ToKey(parts[0]));
+        userInfo.setIndex(Integer.parseInt(parts[1]));
+        userInfo.setTag(Utils.base64ToTag(parts[2]));
+        return userInfo;
+    }
 }

@@ -1,7 +1,6 @@
 package Client;
 
 import Shared.BulletinBoard;
-import Shared.Utils;
 
 import javax.crypto.*;
 import java.rmi.NotBoundException;
@@ -11,18 +10,17 @@ import java.rmi.registry.Registry;
 import java.security.*;
 import java.security.spec.InvalidKeySpecException;
 import java.util.ArrayList;
-import java.util.Scanner;
+import java.util.Objects;
 
 
 public class Chat {
     private final BulletinBoard chatServer;
     private final ArrayList<Message> messages = new ArrayList<>();
-    private final String userName;
+    private String userName;
     private final UserInfo AB = new UserInfo();
-    private final UserInfo BA = new UserInfo();
+    private UserInfo BA = new UserInfo();
 
-    public Chat(String userName) throws RemoteException, NotBoundException, NoSuchAlgorithmException {
-        this.userName = userName;
+    public Chat() throws RemoteException, NotBoundException, NoSuchAlgorithmException {
         Registry registry = LocateRegistry.getRegistry("localhost", 1099);
         this.chatServer = (BulletinBoard) registry.lookup("ChatServer");
 
@@ -31,10 +29,12 @@ public class Chat {
         this.AB.setTag(UserInfo.generateTag());
     }
 
-    public void setup(SecretKey secretKey, int index, byte[] tag) {
-        this.BA.setSecretKey(secretKey);
-        this.BA.setIndex(index);
-        this.BA.setTag(tag);
+    public void setUserName(String userName) {
+        this.userName = userName;
+    }
+
+    public void setup(UserInfo userInfo) {
+        this.BA = userInfo;
     }
 
     public String getUserName() {
@@ -45,62 +45,56 @@ public class Chat {
         return this.messages;
     }
 
-    public void sendMessage(String message) throws RemoteException, NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException, InvalidKeySpecException {
-        Message messageObject = new Message(message);
+    public void sendMessage(Message message) throws RemoteException, NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException, InvalidKeySpecException {
         int nextIndex = UserInfo.generateIndex(chatServer.getSize());
-        messageObject.setIndex(nextIndex);
+        message.setIndex(nextIndex);
 
         byte[] nextTag = UserInfo.generateTag();
-        messageObject.setTag(nextTag);
+        message.setTag(nextTag);
 
-        byte[] encryptedMessage = messageObject.encrypt(this.AB.getSecretKey());
+        byte[] encryptedMessage = message.encrypt(this.AB.getSecretKey());
         this.chatServer.add(encryptedMessage, this.AB.getIndex(), this.AB.getTag());
-        this.messages.add(messageObject);
+        this.messages.add(message);
 
         this.AB.deriveNewKey(this.AB.getTag());
         this.AB.setIndex(nextIndex);
         this.AB.setTag(nextTag);
     }
 
-    public void receiveMessage() throws RemoteException, NoSuchPaddingException, NoSuchAlgorithmException, InvalidKeyException, BadPaddingException, IllegalBlockSizeException, InvalidKeySpecException {
+    public Message receiveMessage() throws RemoteException, NoSuchPaddingException, NoSuchAlgorithmException, InvalidKeyException, BadPaddingException, IllegalBlockSizeException, InvalidKeySpecException, InterruptedException {
         byte[] encryptedMessage = this.chatServer.get(this.BA.getIndex(), this.BA.getTag());
+        if (encryptedMessage == null) {
+            return null;
+        }
         Message message = Message.decrypt(encryptedMessage, this.BA.getSecretKey());
+        message.setSentByMe(false);
         this.messages.add(message);
 
         this.BA.deriveNewKey(this.BA.getTag());
         this.BA.setIndex(message.getIndex());
         this.BA.setTag(message.getTag());
+        return message;
     }
 
-    public void loop() {
-        Scanner scanner = new Scanner(System.in);
-        System.out.println(AB);
-        System.out.println("Key: ");
-        SecretKey secretKey = Utils.base64ToKey(scanner.nextLine());
-        System.out.println("Index: ");
-        int index = scanner.nextInt();
-        scanner.nextLine(); // Consumes the \n
-        System.out.println("Tag: ");
-        byte[] tag = Utils.base64ToTag(scanner.nextLine());
-        this.setup(secretKey, index, tag);
-        System.out.println("Completed setup, let's chat!");
+    @Override
+    public String toString() {
+        return this.userName;
+    }
 
-        while (true) {
-            try {
-                System.out.println("Enter message: ");
-                String message = scanner.nextLine();
-                this.sendMessage(message);
-            } catch (Exception e) {
-                System.out.println("Failed to send message: " + e.getMessage());
-            }
+    public UserInfo getAB() {
+        return AB;
+    }
 
-            try {
-                this.receiveMessage();
-                System.out.println("Received message: " + this.messages.getLast().getMessage());
-            } catch (Exception e) {
-                System.out.println("Failed to receive message: " + e.getMessage());
-            }
-        }
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Chat chat = (Chat) o;
+        return Objects.equals(messages, chat.messages) && Objects.equals(userName, chat.userName) && Objects.equals(AB, chat.AB) && Objects.equals(BA, chat.BA);
+    }
 
+    @Override
+    public int hashCode() {
+        return Objects.hash(messages, userName, AB, BA);
     }
 }

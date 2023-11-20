@@ -8,18 +8,18 @@ import java.rmi.server.UnicastRemoteObject;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class ChatServer extends UnicastRemoteObject implements BulletinBoard {
     private final int SIZE;
-    private final ArrayList<HashMap<String, byte[]>> board;
+    private final ArrayList<ConcurrentHashMap<String, byte[]>> board;
 
     public ChatServer(int size) throws RemoteException {
         super();
         this.SIZE = size;
         this.board = new ArrayList<>(size);
         for (int i = 0; i < size; i++) {
-            this.board.add(new HashMap<>());
+            this.board.add(new ConcurrentHashMap<>());
         }
     }
 
@@ -37,24 +37,24 @@ public class ChatServer extends UnicastRemoteObject implements BulletinBoard {
         String tagString = Utils.tagToBase64(hashedTag);
         System.out.println("[+] Added a message to index " + index + " with hashed tag " + tagString);
         board.get(index).put(tagString, message);
+        notifyAll();
     }
 
-    public synchronized byte[] get(int index, byte[] tag) throws NoSuchAlgorithmException {
+    public synchronized byte[] get(int index, byte[] tag) throws NoSuchAlgorithmException, InterruptedException {
         if (index < 0 || index >= this.SIZE) {
             throw new IndexOutOfBoundsException("Index out of bounds");
         }
 
         byte[] hashedTag = hash(tag);
         String tagString = Utils.tagToBase64(hashedTag);
-        System.out.println("[*] Attempting to retrieve a message from index " + index + " with hashed tag " + tagString);
-        if (board.get(index).containsKey(tagString)) {
-            byte[] value = board.get(index).get(tagString);
-            board.get(index).remove(tagString);
-            System.out.println("[-] Retrieved a message from index " + index);
-            return value;
+        while (!board.get(index).containsKey(tagString)) {
+            System.out.println("[*] Waiting for a message to be added to index " + index);
+            wait();
         }
-        System.out.println("[!] Failed to retrieve a message from index " + index);
-        return null;
+        byte[] value = board.get(index).get(tagString);
+        board.get(index).remove(tagString);
+        System.out.println("[-] Retrieved a message from index " + index);
+        return value;
     }
 
     private byte[] hash(byte[] message) throws NoSuchAlgorithmException {
