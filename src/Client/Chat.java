@@ -3,6 +3,7 @@ package Client;
 import Shared.BulletinBoard;
 
 import javax.crypto.*;
+import java.io.*;
 import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
@@ -13,8 +14,10 @@ import java.util.ArrayList;
 import java.util.Objects;
 
 
-public class Chat {
-    private final BulletinBoard chatServer;
+public class Chat implements Serializable {
+    @Serial
+    private static final long serialVersionUID = 1L;
+    private BulletinBoard chatServer;
     private final ArrayList<Message> messages = new ArrayList<>();
     private String userName;
     private final UserInfo AB = new UserInfo();
@@ -96,5 +99,44 @@ public class Chat {
     @Override
     public int hashCode() {
         return Objects.hash(messages, userName, AB, BA);
+    }
+
+    public static Chat readFromFile(String fileName) throws IOException {
+        FileInputStream fileIn = new FileInputStream(fileName);
+        byte[] serializedChat = fileIn.readAllBytes();
+        return Chat.deserialize(serializedChat);
+    }
+
+    public void writeToFile(String fileName) throws IOException {
+        FileOutputStream fileOut = new FileOutputStream(fileName);
+        byte[] serializedChat = this.serialize();
+        fileOut.write(serializedChat);
+        fileOut.close();
+    }
+
+    public byte[] serialize(){
+        try{
+            ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+            ObjectOutputStream objectOutputStream = new ObjectOutputStream(byteArrayOutputStream);
+            objectOutputStream.writeObject(this);
+            return byteArrayOutputStream.toByteArray();
+        }catch (IOException ioe){
+            System.err.println(ioe.getLocalizedMessage());
+            return null;
+        }
+    }
+
+    public static Chat deserialize(byte[] sChat){
+        try{
+            ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(sChat);
+            ObjectInputStream objectInputStream = new ObjectInputStream(byteArrayInputStream);
+            Object o = objectInputStream.readObject();
+            if(o instanceof Chat)
+                return (Chat) o;
+            else return null;
+        }catch  (IOException | ClassNotFoundException ioe){
+            System.err.println(ioe.getLocalizedMessage());
+            return null;
+        }
     }
 }

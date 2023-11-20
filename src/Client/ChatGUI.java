@@ -11,12 +11,15 @@ import java.awt.datatransfer.Clipboard;
 import java.awt.datatransfer.StringSelection;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
+import java.io.File;
+import java.io.IOException;
 import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
-import java.util.ArrayList;
 
 public class ChatGUI extends JFrame {
     private JTextArea chatArea;
@@ -63,6 +66,89 @@ public class ChatGUI extends JFrame {
         splitPane.setResizeWeight(0.1); // Adjust the initial size of the chat list
 
         add(splitPane, BorderLayout.CENTER);
+
+        // Add a window listener to prompt the user when closing the main window
+        addWindowListener(new WindowAdapter() {
+            @Override
+            public void windowClosing(WindowEvent e) {
+                int option = JOptionPane.showConfirmDialog(ChatGUI.this,
+                        "Do you want to save the chat data?", "Save Data", JOptionPane.YES_NO_OPTION);
+                if (option == JOptionPane.YES_OPTION) {
+                    askForFileNameAndSave();
+                }
+                dispose(); // Close the window
+            }
+        });
+
+        int startupOption = JOptionPane.showConfirmDialog(ChatGUI.this,
+                "Do you want to load chat data from a file?", "Load Data", JOptionPane.YES_NO_OPTION);
+        if (startupOption == JOptionPane.YES_OPTION) {
+            askForFileNameAndLoad();
+        }
+    }
+
+    private void askForFileNameAndLoad() {
+        JTextField fileNameField = new JTextField();
+
+        JPanel panel = new JPanel(new BorderLayout());
+        panel.add(new JLabel("Enter the filename to load chat data from:"), BorderLayout.NORTH);
+        panel.add(fileNameField, BorderLayout.CENTER);
+
+        int result = JOptionPane.showOptionDialog(ChatGUI.this, panel, "Load from File",
+                JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE, null, null, null);
+
+        if (result == JOptionPane.OK_OPTION) {
+            String fileName = fileNameField.getText().trim();
+            if (!fileName.isEmpty()) {
+                File directory = new File(fileName);
+                if (directory.exists() && directory.isDirectory()) {
+                    File[] files = directory.listFiles((dir, name) -> name.endsWith(".chat"));
+                    if (files != null) {
+                        for (File file : files) {
+                            try {
+                                Chat loadedChat = Chat.readFromFile(file.getAbsolutePath());
+                                addChat(loadedChat);
+                            } catch (IOException | NoSuchPaddingException | IllegalBlockSizeException | NoSuchAlgorithmException | BadPaddingException | InvalidKeySpecException | InvalidKeyException ignored) {}
+                        }
+                    }
+                } else {
+                    JOptionPane.showMessageDialog(ChatGUI.this,
+                            "Please enter a valid directory name.", "Error", JOptionPane.ERROR_MESSAGE);
+                }
+            } else {
+                JOptionPane.showMessageDialog(ChatGUI.this,
+                        "Please enter a valid directory name.", "Error", JOptionPane.ERROR_MESSAGE);
+            }
+        }
+    }
+
+    private void askForFileNameAndSave() {
+        JTextField fileNameField = new JTextField();
+
+        JPanel panel = new JPanel(new BorderLayout());
+        panel.add(new JLabel("Enter a filename to save:"), BorderLayout.NORTH);
+        panel.add(fileNameField, BorderLayout.CENTER);
+
+        int result = JOptionPane.showOptionDialog(ChatGUI.this, panel, "Save to File",
+                JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE, null, null, null);
+
+        if (result == JOptionPane.OK_OPTION) {
+            String fileName = fileNameField.getText().trim();
+            if (!fileName.isEmpty()) {
+                File directory = new File(fileName);
+                if (!directory.exists()) {
+                    directory.mkdir();
+                }
+                for (Object object : chatListModel.toArray()) {
+                    Chat chat = (Chat) object;
+                    try {
+                        chat.writeToFile(fileName + "/" + chat.getUserName() + ".chat");
+                    } catch (IOException ignored) {}
+                }
+            } else {
+                JOptionPane.showMessageDialog(ChatGUI.this, "Please enter a valid filename.", "Error", JOptionPane.ERROR_MESSAGE);
+            }
+        }
     }
 
     private JPanel createChatAreaPanel() {
@@ -200,13 +286,6 @@ public class ChatGUI extends JFrame {
                 newChat.setup(userInfo);
                 try {
                     addChat(newChat);
-                    new Thread(() -> {
-                        while (true) {
-                            try {
-                                recieveMessage(newChat);
-                            } catch (Exception ignored) {}
-                        }
-                    }).start();
                 } catch (NoSuchPaddingException | IllegalBlockSizeException | NoSuchAlgorithmException |
                          BadPaddingException | InvalidKeySpecException | RemoteException | InvalidKeyException ex) {
                     throw new RuntimeException(ex);
@@ -224,6 +303,13 @@ public class ChatGUI extends JFrame {
     private void addChat(Chat chat) throws NoSuchPaddingException, IllegalBlockSizeException, NoSuchAlgorithmException, BadPaddingException, InvalidKeySpecException, RemoteException, InvalidKeyException {
         chatListModel.addElement(chat);
         chatList.setSelectedValue(chat, true);
+        new Thread(() -> {
+            while (true) {
+                try {
+                    recieveMessage(chat);
+                } catch (Exception ignored) {}
+            }
+        }).start();
     }
 
 

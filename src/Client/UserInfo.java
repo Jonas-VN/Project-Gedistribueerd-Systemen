@@ -8,12 +8,15 @@ import javax.crypto.SecretKey;
 import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.PBEKeySpec;
 import javax.crypto.spec.SecretKeySpec;
+import java.io.*;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.KeySpec;
 
-public class UserInfo {
+public class UserInfo implements Serializable {
+    @Serial
+    private static final long serialVersionUID = 1L;
     private SecretKey secretKey;
     private int index;
     private byte[] tag;

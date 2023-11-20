@@ -3,12 +3,15 @@ package Client;
 import Shared.Utils;
 
 import javax.crypto.*;
+import java.io.*;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 import java.util.Objects;
 
-public class Message {
+public class Message implements Serializable {
+    @Serial
+    private static final long serialVersionUID = 1L;
     private static final String SEPARATOR = "§";
     private final String message;
     private int index;
