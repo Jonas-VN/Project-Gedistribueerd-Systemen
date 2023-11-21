@@ -9,7 +9,6 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.datatransfer.Clipboard;
 import java.awt.datatransfer.StringSelection;
-import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
@@ -20,12 +19,14 @@ import java.rmi.RemoteException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
+import java.util.ArrayList;
 
 public class ChatGUI extends JFrame {
     private JTextArea chatArea;
     private JTextField messageInput;
-    private DefaultListModel<Chat> chatListModel = new DefaultListModel<>();
+    private final DefaultListModel<Chat> chatListModel = new DefaultListModel<>();
     private final JList<Chat> chatList = new JList<>(chatListModel);
+    private final ArrayList<ReceiveThread> threads = new ArrayList<>();
 
     public ChatGUI() throws NotBoundException, NoSuchAlgorithmException, RemoteException, NoSuchPaddingException, IllegalBlockSizeException, BadPaddingException, InvalidKeySpecException, InvalidKeyException {
         setTitle("Chat Application");
@@ -47,14 +48,11 @@ public class ChatGUI extends JFrame {
         chatListScrollPane.setPreferredSize(new Dimension(100, 0));
 
         JButton bumpButton = new JButton("Bump");
-        bumpButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                try {
-                    openBumpWindow();
-                } catch (NotBoundException | NoSuchAlgorithmException | RemoteException ex) {
-                    throw new RuntimeException(ex);
-                }
+        bumpButton.addActionListener(e -> {
+            try {
+                openBumpWindow();
+            } catch (NotBoundException | NoSuchAlgorithmException | RemoteException ex) {
+                throw new RuntimeException(ex);
             }
         });
         JPanel chatListPanel = new JPanel(new BorderLayout());
@@ -77,6 +75,15 @@ public class ChatGUI extends JFrame {
                     askForFileNameAndSave();
                 }
                 dispose(); // Close the window
+                for (int i = 0; i < threads.size(); i++) {
+                    threads.get(i).stopThread();
+                    Chat chat = chatListModel.get(i);
+                    try {
+                        chat.ignoreBATag();
+                    } catch (RemoteException | NoSuchAlgorithmException | InterruptedException ex) {
+                        throw new RuntimeException(ex);
+                    }
+                }
             }
         });
 
@@ -161,20 +168,10 @@ public class ChatGUI extends JFrame {
 
         JPanel bottomPanel = new JPanel(new BorderLayout());
         messageInput = new JTextField();
-        messageInput.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                sendMessage();
-            }
-        });
+        messageInput.addActionListener(e -> sendMessage());
 
         JButton sendButton = new JButton("Send");
-        sendButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                sendMessage();
-            }
-        });
+        sendButton.addActionListener(e -> sendMessage());
 
         bottomPanel.add(messageInput, BorderLayout.CENTER);
         bottomPanel.add(sendButton, BorderLayout.EAST);
@@ -194,7 +191,7 @@ public class ChatGUI extends JFrame {
             chatArea.setText(chatText.toString());
         }
     }
-    private void recieveMessage(Chat chat) {
+    public void receiveMessage(Chat chat) {
         Message receivedMessage = null;
         try {
             receivedMessage = chat.receiveMessage();
@@ -203,8 +200,11 @@ public class ChatGUI extends JFrame {
         assert receivedMessage != null;
         if (chatList.getSelectedValue() == chat) {
             chatArea.append(chat.getUserName() + ": " + receivedMessage.getMessage() + "\n");
+
+            // Scroll to the bottom of the chat area
+            chatArea.setCaretPosition(chatArea.getDocument().getLength());
         }
-        // Else: the chat is not selected, so we don't need to update the chat area
+        // Else: the chat is not selected, so we don't need to update the chat area (the message already has been added to the list)
     }
 
     private void sendMessage() {
@@ -269,29 +269,26 @@ public class ChatGUI extends JFrame {
         copyCSVButton.addActionListener(createCopyButtonListener(newChat.getAB().toCSV()));
 
         // Add action listener for the "OK" button
-        okButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                UserInfo userInfo;
-                if (CSVInput.getText() != null && !CSVInput.getText().isEmpty()) {
-                    userInfo = UserInfo.fromCSV(CSVInput.getText());
-                }
-                else {
-                    userInfo = new UserInfo();
-                    userInfo.setSecretKey(Utils.base64ToKey(keyInput.getText()));
-                    userInfo.setIndex(Integer.parseInt(indexInput.getText()));
-                    userInfo.setTag(Utils.base64ToTag(tagInput.getText()));
-                }
-                newChat.setUserName(userNameInput.getText());
-                newChat.setup(userInfo);
-                try {
-                    addChat(newChat);
-                } catch (NoSuchPaddingException | IllegalBlockSizeException | NoSuchAlgorithmException |
-                         BadPaddingException | InvalidKeySpecException | RemoteException | InvalidKeyException ex) {
-                    throw new RuntimeException(ex);
-                }
-                bumpFrame.dispose();
+        okButton.addActionListener(e -> {
+            UserInfo userInfo;
+            if (CSVInput.getText() != null && !CSVInput.getText().isEmpty()) {
+                userInfo = UserInfo.fromCSV(CSVInput.getText());
             }
+            else {
+                userInfo = new UserInfo();
+                userInfo.setSecretKey(Utils.base64ToKey(keyInput.getText()));
+                userInfo.setIndex(Integer.parseInt(indexInput.getText()));
+                userInfo.setTag(Utils.base64ToTag(tagInput.getText()));
+            }
+            newChat.setUserName(userNameInput.getText());
+            newChat.setup(userInfo);
+            try {
+                addChat(newChat);
+            } catch (NoSuchPaddingException | IllegalBlockSizeException | NoSuchAlgorithmException |
+                     BadPaddingException | InvalidKeySpecException | RemoteException | InvalidKeyException ex) {
+                throw new RuntimeException(ex);
+            }
+            bumpFrame.dispose();
         });
 
         // Set window properties
@@ -303,24 +300,16 @@ public class ChatGUI extends JFrame {
     private void addChat(Chat chat) throws NoSuchPaddingException, IllegalBlockSizeException, NoSuchAlgorithmException, BadPaddingException, InvalidKeySpecException, RemoteException, InvalidKeyException {
         chatListModel.addElement(chat);
         chatList.setSelectedValue(chat, true);
-        new Thread(() -> {
-            while (true) {
-                try {
-                    recieveMessage(chat);
-                } catch (Exception ignored) {}
-            }
-        }).start();
+        ReceiveThread thread = new ReceiveThread(this, chat);
+        thread.start();
+        threads.add(thread);
     }
 
 
     private ActionListener createCopyButtonListener(String text) {
-        return new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
-                clipboard.setContents(new StringSelection(text), null);
-                // JOptionPane.showMessageDialog(null, "Copied to clipboard!");
-            }
+        return e -> {
+            Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
+            clipboard.setContents(new StringSelection(text), null);
         };
     }
 }

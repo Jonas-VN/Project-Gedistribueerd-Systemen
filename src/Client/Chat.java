@@ -17,7 +17,7 @@ import java.util.Objects;
 public class Chat implements Serializable {
     @Serial
     private static final long serialVersionUID = 1L;
-    private BulletinBoard chatServer;
+    private final BulletinBoard chatServer;
     private final ArrayList<Message> messages = new ArrayList<>();
     private String userName;
     private final UserInfo AB = new UserInfo();
@@ -48,7 +48,11 @@ public class Chat implements Serializable {
         return this.messages;
     }
 
-    public void sendMessage(Message message) throws RemoteException, NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException, InvalidKeySpecException {
+    public void ignoreBATag() throws RemoteException, NoSuchAlgorithmException, InterruptedException {
+        this.chatServer.ignoreTag(this.BA.getTag());
+    }
+
+    public void sendMessage(Message message) throws RemoteException, NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException, InvalidKeySpecException, InterruptedException {
         int nextIndex = UserInfo.generateIndex(chatServer.getSize());
         message.setIndex(nextIndex);
 

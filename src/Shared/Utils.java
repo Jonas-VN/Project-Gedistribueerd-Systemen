@@ -26,11 +26,11 @@ public class Utils {
         return base64ToBytes(tag);
     }
 
-    private static String bytesToBase64(byte[] bytes) {
+    public static String bytesToBase64(byte[] bytes) {
         return Base64.getEncoder().encodeToString(bytes);
     }
 
-    private static byte[] base64ToBytes(String base64) {
+    public static byte[] base64ToBytes(String base64) {
         return Base64.getDecoder().decode(base64);
     }
 }
