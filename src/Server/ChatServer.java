@@ -10,8 +10,10 @@ import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Semaphore;
+import java.util.logging.Logger;
 
 public class ChatServer extends UnicastRemoteObject implements BulletinBoard {
+    private final Logger logger = Logger.getLogger(ChatServer.class.getName());
     private final int SIZE;
     private final ArrayList<ConcurrentHashMap<String, byte[]>> board;
     private final Semaphore[] semaphores;
@@ -23,6 +25,7 @@ public class ChatServer extends UnicastRemoteObject implements BulletinBoard {
 
     public ChatServer(int size) throws RemoteException {
         super();
+        this.logger.info("[*] Initializing ChatServer");
         this.SIZE = size;
         this.board = new ArrayList<>(size);
         this.semaphores = new Semaphore[size];
@@ -34,6 +37,7 @@ public class ChatServer extends UnicastRemoteObject implements BulletinBoard {
             this.numberOfWaitingThreads[i] = 0;
             this.indexMutexes[i] = new Semaphore(1);
         }
+        this.logger.info("[+] Initialized ChatServer");
     }
 
     public int getSize() {
@@ -49,7 +53,7 @@ public class ChatServer extends UnicastRemoteObject implements BulletinBoard {
         byte[] hashedTag = hash(tag);
         // de hashedTag als key werkt niet omdat er geen equals methode is voor byte arrays? dus kijkt ie naar het object zelf ipv de inhoud
         String tagString = Utils.tagToBase64(hashedTag);
-        System.out.println("[+] Added a message to index " + index + " with hashed tag " + tagString);
+        this.logger.info("[+] Added a message to index " + index + " with hashed tag " + tagString);
         board.get(index).put(tagString, message);
 
         this.indexMutexes[index].acquire();
@@ -71,7 +75,7 @@ public class ChatServer extends UnicastRemoteObject implements BulletinBoard {
         this.indexMutexes[index].release();
 
         while (!this.containsKey(index, tagString)) {
-            System.out.println("[*] Waiting for a message to be added to index " + index + " with tag " + tagString);
+            this.logger.info("[*] Waiting for a message to be added to index " + index + " with tag " + tagString);
             this.semaphores[index].acquire();
         }
 
@@ -82,14 +86,14 @@ public class ChatServer extends UnicastRemoteObject implements BulletinBoard {
         mutex.acquire();
         if (this.tagsToIgnore.contains(Utils.tagToBase64(hashedTag))) {
             // Sort of interrupt the thread, so it can quit when the GUI is closed
-            System.out.println("[!] Ignoring a message with tag " + tagString);
+            this.logger.info("[!] Ignoring a message with tag " + tagString);
             tagsToIgnore.remove(Utils.tagToBase64(hashedTag));
             mutex.release();
             return null;
         }
         byte[] value = board.get(index).get(tagString);
         board.get(index).remove(tagString);
-        System.out.println("[-] Retrieved a message from index " + index + " with tag " + tagString);
+        this.logger.info("[-] Retrieved a message from index " + index + " with tag " + tagString);
         mutex.release();
         return value;
     }
@@ -97,7 +101,7 @@ public class ChatServer extends UnicastRemoteObject implements BulletinBoard {
     public void ignoreTag(byte[] tag) throws NoSuchAlgorithmException, InterruptedException {
         byte[] hashedTag = hash(tag);
         String tagString = Utils.tagToBase64(hashedTag);
-        System.out.println("[*] Ignoring a tag " + tagString);
+        this.logger.info("[*] Ignoring a tag " + tagString);
         mutex.acquire();
         this.tagsToIgnore.add(tagString);
         mutex.release();
