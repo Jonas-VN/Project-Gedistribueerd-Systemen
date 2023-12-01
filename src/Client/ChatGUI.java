@@ -107,7 +107,7 @@ public class ChatGUI extends JFrame {
         if (result == JOptionPane.OK_OPTION) {
             String fileName = fileNameField.getText().trim();
             if (!fileName.isEmpty()) {
-                File directory = new File(fileName);
+                File directory = new File("Chats/" + fileName);
                 if (directory.exists() && directory.isDirectory()) {
                     File[] files = directory.listFiles((dir, name) -> name.endsWith(".chat"));
                     if (files != null) {
@@ -142,14 +142,14 @@ public class ChatGUI extends JFrame {
         if (result == JOptionPane.OK_OPTION) {
             String fileName = fileNameField.getText().trim();
             if (!fileName.isEmpty()) {
-                File directory = new File(fileName);
+                File directory = new File("Chats/" + fileName);
                 if (!directory.exists()) {
                     directory.mkdir();
                 }
                 for (Object object : chatListModel.toArray()) {
                     Chat chat = (Chat) object;
                     try {
-                        chat.writeToFile(fileName + "/" + chat.getUserName() + ".chat");
+                        chat.writeToFile("Chats/" + fileName + "/" + chat.getUserName() + ".chat");
                     } catch (IOException ignored) {}
                 }
             } else {
