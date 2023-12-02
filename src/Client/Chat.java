@@ -61,6 +61,7 @@ public class Chat implements Serializable {
 
         byte[] encryptedMessage = message.encrypt(this.AB.getSecretKey());
         this.chatServer.add(encryptedMessage, this.AB.getIndex(), this.AB.getTag());
+        message.clearIndexAndTag();
         this.messages.add(message);
 
         this.AB.deriveNewKey(this.AB.getTag());
@@ -80,6 +81,7 @@ public class Chat implements Serializable {
         this.BA.deriveNewKey(this.BA.getTag());
         this.BA.setIndex(message.getIndex());
         this.BA.setTag(message.getTag());
+        message.clearIndexAndTag();
         return message;
     }
 

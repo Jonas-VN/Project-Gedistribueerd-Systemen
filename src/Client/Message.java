@@ -23,6 +23,12 @@ public class Message implements Serializable {
         this.message = message;
     }
 
+    public void clearIndexAndTag() {
+        // Don't store the index and tag after sending/receiving the message
+        this.index = -1;
+        this.tag = new byte[0];
+    }
+
     public String getMessage() {
         return message;
     }

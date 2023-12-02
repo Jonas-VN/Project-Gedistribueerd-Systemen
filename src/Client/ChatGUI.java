@@ -197,7 +197,7 @@ public class ChatGUI extends JFrame {
             receivedMessage = chat.receiveMessage();
         }
         catch (Exception ignored){}
-        assert receivedMessage != null;
+        if (receivedMessage == null) return;
         if (chatList.getSelectedValue() == chat) {
             chatArea.append(chat.getUserName() + ": " + receivedMessage.getMessage() + "\n");
 
@@ -209,7 +209,7 @@ public class ChatGUI extends JFrame {
 
     private void sendMessage() {
         Chat selectedChat = chatList.getSelectedValue();
-        if (selectedChat != null) {
+        if (selectedChat != null && !messageInput.getText().isEmpty()) {
             Message message = new Message(messageInput.getText());
             try {
                 selectedChat.sendMessage(message);
