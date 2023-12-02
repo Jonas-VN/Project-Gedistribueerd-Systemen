@@ -6,10 +6,7 @@ import Shared.BulletinBoard;
 
 import javax.crypto.*;
 import java.io.*;
-import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
-import java.rmi.registry.LocateRegistry;
-import java.rmi.registry.Registry;
 import java.security.*;
 import java.security.spec.InvalidKeySpecException;
 import java.util.ArrayList;
@@ -37,8 +34,8 @@ public class Chat implements Serializable {
         this.userName = userName;
     }
 
-    public void setup(CryptoMetaData userInfo) {
-        this.BA = userInfo;
+    public void setup(CryptoMetaData cryptoMetaData) {
+        this.BA = cryptoMetaData;
     }
 
     public String getUserName() {

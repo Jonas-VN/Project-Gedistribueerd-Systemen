@@ -79,10 +79,10 @@ public class CryptoMetaData implements Serializable {
 
     public static CryptoMetaData fromCSV(String csv) {
         String[] parts = csv.split(",");
-        CryptoMetaData userInfo = new CryptoMetaData();
-        userInfo.setSecretKey(Utils.base64ToKey(parts[0]));
-        userInfo.setIndex(Integer.parseInt(parts[1]));
-        userInfo.setTag(Utils.base64ToTag(parts[2]));
-        return userInfo;
+        CryptoMetaData cryptoMetaData = new CryptoMetaData();
+        cryptoMetaData.setSecretKey(Utils.base64ToKey(parts[0]));
+        cryptoMetaData.setIndex(Integer.parseInt(parts[1]));
+        cryptoMetaData.setTag(Utils.base64ToTag(parts[2]));
+        return cryptoMetaData;
     }
 }

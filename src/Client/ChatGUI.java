@@ -279,18 +279,18 @@ public class ChatGUI extends JFrame {
 
         // Add action listener for the "OK" button
         okButton.addActionListener(e -> {
-            CryptoMetaData userInfo;
+            CryptoMetaData cryptoMetaData;
             if (CSVInput.getText() != null && !CSVInput.getText().isEmpty()) {
-                userInfo = CryptoMetaData.fromCSV(CSVInput.getText());
+                cryptoMetaData = CryptoMetaData.fromCSV(CSVInput.getText());
             }
             else {
-                userInfo = new CryptoMetaData();
-                userInfo.setSecretKey(Utils.base64ToKey(keyInput.getText()));
-                userInfo.setIndex(Integer.parseInt(indexInput.getText()));
-                userInfo.setTag(Utils.base64ToTag(tagInput.getText()));
+                cryptoMetaData = new CryptoMetaData();
+                cryptoMetaData.setSecretKey(Utils.base64ToKey(keyInput.getText()));
+                cryptoMetaData.setIndex(Integer.parseInt(indexInput.getText()));
+                cryptoMetaData.setTag(Utils.base64ToTag(tagInput.getText()));
             }
             newChat.setUserName(userNameInput.getText());
-            newChat.setup(userInfo);
+            newChat.setup(cryptoMetaData);
             try {
                 addChat(newChat);
             } catch (NoSuchPaddingException | IllegalBlockSizeException | NoSuchAlgorithmException |

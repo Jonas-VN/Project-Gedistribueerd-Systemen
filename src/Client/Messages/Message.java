@@ -9,7 +9,6 @@ public class Message implements Serializable {
     private final String message;
     private boolean sentByMe = true;
 
-
     public Message(String message) {
         this.message = message;
     }
