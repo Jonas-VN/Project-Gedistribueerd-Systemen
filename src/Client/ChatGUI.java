@@ -1,5 +1,7 @@
 package Client;
 
+import Client.Messages.Message;
+import Shared.BulletinBoard;
 import Shared.Utils;
 
 import javax.crypto.BadPaddingException;
@@ -16,12 +18,15 @@ import java.io.File;
 import java.io.IOException;
 import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
+import java.rmi.registry.LocateRegistry;
+import java.rmi.registry.Registry;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
 import java.util.ArrayList;
 
 public class ChatGUI extends JFrame {
+    private final BulletinBoard chatServer;
     private JTextArea chatArea;
     private JTextField messageInput;
     private final DefaultListModel<Chat> chatListModel = new DefaultListModel<>();
@@ -29,6 +34,9 @@ public class ChatGUI extends JFrame {
     private final ArrayList<ReceiveThread> threads = new ArrayList<>();
 
     public ChatGUI() throws NotBoundException, NoSuchAlgorithmException, RemoteException, NoSuchPaddingException, IllegalBlockSizeException, BadPaddingException, InvalidKeySpecException, InvalidKeyException {
+        Registry registry = LocateRegistry.getRegistry("localhost", 1099);
+        this.chatServer = (BulletinBoard) registry.lookup("ChatServer");
+
         setTitle("Chat Application");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLayout(new BorderLayout());
@@ -107,6 +115,7 @@ public class ChatGUI extends JFrame {
         if (result == JOptionPane.OK_OPTION) {
             String fileName = fileNameField.getText().trim();
             if (!fileName.isEmpty()) {
+                setTitle("Chat Application - " + fileName);
                 File directory = new File("Chats/" + fileName);
                 if (directory.exists() && directory.isDirectory()) {
                     File[] files = directory.listFiles((dir, name) -> name.endsWith(".chat"));
@@ -222,7 +231,7 @@ public class ChatGUI extends JFrame {
     }
 
     private void openBumpWindow() throws NotBoundException, NoSuchAlgorithmException, RemoteException {
-        Chat newChat = new Chat();
+        Chat newChat = new Chat(this.chatServer);
         JFrame bumpFrame = new JFrame("Bump Window");
         bumpFrame.setSize(500, 400);
 
@@ -270,12 +279,12 @@ public class ChatGUI extends JFrame {
 
         // Add action listener for the "OK" button
         okButton.addActionListener(e -> {
-            UserInfo userInfo;
+            CryptoMetaData userInfo;
             if (CSVInput.getText() != null && !CSVInput.getText().isEmpty()) {
-                userInfo = UserInfo.fromCSV(CSVInput.getText());
+                userInfo = CryptoMetaData.fromCSV(CSVInput.getText());
             }
             else {
-                userInfo = new UserInfo();
+                userInfo = new CryptoMetaData();
                 userInfo.setSecretKey(Utils.base64ToKey(keyInput.getText()));
                 userInfo.setIndex(Integer.parseInt(indexInput.getText()));
                 userInfo.setTag(Utils.base64ToTag(tagInput.getText()));

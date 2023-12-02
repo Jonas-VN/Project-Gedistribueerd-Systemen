@@ -1,5 +1,7 @@
 package Client;
 
+import Client.Messages.BulletinBoardMessage;
+import Client.Messages.Message;
 import Shared.BulletinBoard;
 
 import javax.crypto.*;
@@ -20,23 +22,22 @@ public class Chat implements Serializable {
     private final BulletinBoard chatServer;
     private final ArrayList<Message> messages = new ArrayList<>();
     private String userName;
-    private final UserInfo AB = new UserInfo();
-    private UserInfo BA = new UserInfo();
+    private final CryptoMetaData AB = new CryptoMetaData();
+    private CryptoMetaData BA = new CryptoMetaData();
 
-    public Chat() throws RemoteException, NotBoundException, NoSuchAlgorithmException {
-        Registry registry = LocateRegistry.getRegistry("localhost", 1099);
-        this.chatServer = (BulletinBoard) registry.lookup("ChatServer");
+    public Chat(BulletinBoard chatServer) throws RemoteException, NoSuchAlgorithmException {
+        this.chatServer = chatServer;
 
-        this.AB.setSecretKey(UserInfo.generateKey());
-        this.AB.setIndex(UserInfo.generateIndex(this.chatServer.getSize()));
-        this.AB.setTag(UserInfo.generateTag());
+        this.AB.setSecretKey(CryptoMetaData.generateKey());
+        this.AB.setIndex(CryptoMetaData.generateIndex(this.chatServer.getSize()));
+        this.AB.setTag(CryptoMetaData.generateTag());
     }
 
     public void setUserName(String userName) {
         this.userName = userName;
     }
 
-    public void setup(UserInfo userInfo) {
+    public void setup(CryptoMetaData userInfo) {
         this.BA = userInfo;
     }
 
@@ -53,15 +54,12 @@ public class Chat implements Serializable {
     }
 
     public void sendMessage(Message message) throws RemoteException, NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException, InvalidKeySpecException, InterruptedException {
-        int nextIndex = UserInfo.generateIndex(chatServer.getSize());
-        message.setIndex(nextIndex);
+        int nextIndex = CryptoMetaData.generateIndex(chatServer.getSize());
+        byte[] nextTag = CryptoMetaData.generateTag();
+        BulletinBoardMessage bulletinBoardMessage = new BulletinBoardMessage(message, nextIndex, nextTag);
 
-        byte[] nextTag = UserInfo.generateTag();
-        message.setTag(nextTag);
-
-        byte[] encryptedMessage = message.encrypt(this.AB.getSecretKey());
+        byte[] encryptedMessage = bulletinBoardMessage.encrypt(this.AB.getSecretKey());
         this.chatServer.add(encryptedMessage, this.AB.getIndex(), this.AB.getTag());
-        message.clearIndexAndTag();
         this.messages.add(message);
 
         this.AB.deriveNewKey(this.AB.getTag());
@@ -74,14 +72,14 @@ public class Chat implements Serializable {
         if (encryptedMessage == null) {
             return null;
         }
-        Message message = Message.decrypt(encryptedMessage, this.BA.getSecretKey());
+        BulletinBoardMessage bulletinBoardMessage = BulletinBoardMessage.decrypt(encryptedMessage, this.BA.getSecretKey());
+        Message message = bulletinBoardMessage.message();
         message.setSentByMe(false);
         this.messages.add(message);
 
         this.BA.deriveNewKey(this.BA.getTag());
-        this.BA.setIndex(message.getIndex());
-        this.BA.setTag(message.getTag());
-        message.clearIndexAndTag();
+        this.BA.setIndex(bulletinBoardMessage.index());
+        this.BA.setTag(bulletinBoardMessage.tag());
         return message;
     }
 
@@ -90,7 +88,7 @@ public class Chat implements Serializable {
         return this.userName;
     }
 
-    public UserInfo getAB() {
+    public CryptoMetaData getAB() {
         return AB;
     }
 

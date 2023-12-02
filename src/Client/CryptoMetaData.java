@@ -12,7 +12,7 @@ import java.security.SecureRandom;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.KeySpec;
 
-public class UserInfo implements Serializable {
+public class CryptoMetaData implements Serializable {
     @Serial
     private static final long serialVersionUID = 1L;
     private SecretKey secretKey;
@@ -52,7 +52,7 @@ public class UserInfo implements Serializable {
 
     @Override
     public String toString() {
-        return "UserInfo{" +
+        return "CryptoMetaData{" +
                 "secretKey=" + Utils.keyToBase64(secretKey) +
                 ", index=" + index +
                 ", tag=" + Utils.tagToBase64(tag) +
@@ -77,9 +77,9 @@ public class UserInfo implements Serializable {
         return Utils.keyToBase64(this.secretKey) + "," + this.index + "," + Utils.tagToBase64(this.tag);
     }
 
-    public static UserInfo fromCSV(String csv) {
+    public static CryptoMetaData fromCSV(String csv) {
         String[] parts = csv.split(",");
-        UserInfo userInfo = new UserInfo();
+        CryptoMetaData userInfo = new CryptoMetaData();
         userInfo.setSecretKey(Utils.base64ToKey(parts[0]));
         userInfo.setIndex(Integer.parseInt(parts[1]));
         userInfo.setTag(Utils.base64ToTag(parts[2]));
