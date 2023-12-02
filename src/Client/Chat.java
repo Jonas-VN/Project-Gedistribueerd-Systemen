@@ -46,8 +46,8 @@ public class Chat implements Serializable {
         return this.messages;
     }
 
-    public void ignoreBATag() throws RemoteException, NoSuchAlgorithmException, InterruptedException {
-        this.chatServer.ignoreTag(this.BA.getTag());
+    public void sendDummyMessage() throws NoSuchAlgorithmException, RemoteException, InterruptedException {
+        this.chatServer.add(new byte[0], this.BA.getIndex(), this.BA.getTag());
     }
 
     public void sendMessage(Message message) throws RemoteException, NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException, InvalidKeySpecException, InterruptedException {

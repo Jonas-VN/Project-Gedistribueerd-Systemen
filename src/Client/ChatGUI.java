@@ -87,7 +87,7 @@ public class ChatGUI extends JFrame {
                     threads.get(i).stopThread();
                     Chat chat = chatListModel.get(i);
                     try {
-                        chat.ignoreBATag();
+                        chat.sendDummyMessage();
                     } catch (RemoteException | NoSuchAlgorithmException | InterruptedException ex) {
                         throw new RuntimeException(ex);
                     }

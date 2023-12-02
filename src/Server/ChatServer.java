@@ -44,6 +44,15 @@ public class ChatServer extends UnicastRemoteObject implements BulletinBoard {
         byte[] hashedTag = hash(tag);
         String tagString = Utils.bytesToBase64(hashedTag);
 
+        if (message.length == 0) {
+            // Dummy message
+            System.out.println("[*] Ignoring a message with tag " + tagString);
+            this.tagsToIgnoreMutex.acquire();
+            this.tagsToIgnore.add(tagString);
+            this.tagsToIgnoreMutex.release();
+            return;
+        }
+
         this.perIndexMutex.get(index).acquire();
         board.get(index).put(tagString, message);
         System.out.println("[+] Added a message to index " + index + " with hashed tag " + tagString);
@@ -99,15 +108,6 @@ public class ChatServer extends UnicastRemoteObject implements BulletinBoard {
         System.out.println("[-] Retrieved a message from index " + index + " with tag " + tagString);
         this.perIndexMutex.get(index).release();
         return value;
-    }
-
-    public void ignoreTag(byte[] tag) throws NoSuchAlgorithmException, InterruptedException {
-        byte[] hashedTag = hash(tag);
-        String tagString = Utils.tagToBase64(hashedTag);
-        System.out.println("[*] Ignoring a tag " + tagString);
-        this.tagsToIgnoreMutex.acquire();
-        this.tagsToIgnore.add(tagString);
-        this.tagsToIgnoreMutex.release();
     }
 
     private byte[] hash(byte[] message) throws NoSuchAlgorithmException {
