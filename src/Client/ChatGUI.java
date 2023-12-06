@@ -16,10 +16,17 @@ import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.File;
 import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.Proxy;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.rmi.Naming;
 import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
+import java.rmi.server.RMIClientSocketFactory;
+import java.rmi.server.RMISocketFactory;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
@@ -33,7 +40,11 @@ public class ChatGUI extends JFrame {
     private final JList<Chat> chatList = new JList<>(chatListModel);
     private final ArrayList<ReceiveThread> threads = new ArrayList<>();
 
-    public ChatGUI() throws NotBoundException, NoSuchAlgorithmException, RemoteException, NoSuchPaddingException, IllegalBlockSizeException, BadPaddingException, InvalidKeySpecException, InvalidKeyException {
+    public ChatGUI() throws NotBoundException, NoSuchAlgorithmException, IOException, NoSuchPaddingException, IllegalBlockSizeException, BadPaddingException, InvalidKeySpecException, InvalidKeyException {
+//        System.setProperty("proxySet", "true");
+//        System.setProperty("socksProxyHost", "localhost");
+//        System.setProperty("socksProxyPort", "9050");
+
         Registry registry = LocateRegistry.getRegistry("localhost", 1099);
         this.chatServer = (BulletinBoard) registry.lookup("ChatServer");
 

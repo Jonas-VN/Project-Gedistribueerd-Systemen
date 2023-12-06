@@ -56,7 +56,7 @@ public class Chat implements Serializable {
         BulletinBoardMessage bulletinBoardMessage = new BulletinBoardMessage(message, nextIndex, nextTag);
 
         byte[] encryptedMessage = bulletinBoardMessage.encrypt(this.AB.getSecretKey());
-        this.chatServer.add(encryptedMessage, this.AB.getIndex(), this.AB.getTag());
+        this.chatServer.add(encryptedMessage, this.AB.getIndex(), hash(this.AB.getTag()));
         this.messages.add(message);
 
         this.AB.deriveNewKey(this.AB.getTag());
@@ -65,7 +65,7 @@ public class Chat implements Serializable {
     }
 
     public Message receiveMessage() throws RemoteException, NoSuchPaddingException, NoSuchAlgorithmException, InvalidKeyException, BadPaddingException, IllegalBlockSizeException, InvalidKeySpecException, InterruptedException {
-        byte[] encryptedMessage = this.chatServer.get(this.BA.getIndex(), this.BA.getTag());
+        byte[] encryptedMessage = this.chatServer.get(this.BA.getIndex(), hash(this.BA.getTag()));
         if (encryptedMessage == null) {
             return null;
         }
@@ -87,6 +87,11 @@ public class Chat implements Serializable {
 
     public CryptoMetaData getAB() {
         return AB;
+    }
+
+    private static byte[] hash(byte[] input) throws NoSuchAlgorithmException {
+        MessageDigest digest = MessageDigest.getInstance("SHA-256");
+        return digest.digest(input);
     }
 
     @Override
@@ -116,7 +121,7 @@ public class Chat implements Serializable {
     }
 
     public byte[] serialize(){
-        try{
+        try {
             ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
             ObjectOutputStream objectOutputStream = new ObjectOutputStream(byteArrayOutputStream);
             objectOutputStream.writeObject(this);

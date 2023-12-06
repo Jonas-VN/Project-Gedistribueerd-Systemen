@@ -37,12 +37,11 @@ public class ChatServer extends UnicastRemoteObject implements BulletinBoard {
         return SIZE;
     }
 
-    public void add(byte[] message, int index, byte[] tag) throws NoSuchAlgorithmException, InterruptedException {
+    public void add(byte[] message, int index, byte[] tag) throws InterruptedException {
         if (index < 0 || index >= this.SIZE) {
             throw new IndexOutOfBoundsException("Index out of bounds");
         }
-        byte[] hashedTag = hash(tag);
-        String tagString = Utils.bytesToBase64(hashedTag);
+        String tagString = Utils.bytesToBase64(tag);
 
         if (message.length == 0) {
             // Dummy message
@@ -67,12 +66,11 @@ public class ChatServer extends UnicastRemoteObject implements BulletinBoard {
         this.perIndexMutex.get(index).release();
     }
 
-    public byte[] get(int index, byte[] tag) throws NoSuchAlgorithmException, InterruptedException {
+    public byte[] get(int index, byte[] tag) throws InterruptedException {
         if (index < 0 || index >= this.SIZE) {
             throw new IndexOutOfBoundsException("Index out of bounds");
         }
-        byte[] hashedTag = hash(tag);
-        String tagString = Utils.tagToBase64(hashedTag);
+        String tagString = Utils.tagToBase64(tag);
 
         this.perIndexMutex.get(index).acquire();
         if (!this.mutexPerTag.get(index).containsKey(tagString)) {
@@ -108,10 +106,5 @@ public class ChatServer extends UnicastRemoteObject implements BulletinBoard {
         System.out.println("[-] Retrieved a message from index " + index + " with tag " + tagString);
         this.perIndexMutex.get(index).release();
         return value;
-    }
-
-    private byte[] hash(byte[] message) throws NoSuchAlgorithmException {
-        MessageDigest digest = MessageDigest.getInstance("SHA-256");
-        return digest.digest(message);
     }
 }
